@@ -8,6 +8,14 @@ volumes:
   postgres: null
 services:
   #  business services
+  task-tracker:
+    image: async_architecture/task-tracker:0.1.0
+    networks:
+      - aa_app_network
+    environment:
+      SOME_VAR: todo
+    depends_on:
+      - redpanda
   auth:
     image: async_architecture/auth:0.1.0
     networks:
@@ -31,7 +39,7 @@ services:
       - POSTGRES_PASSWORD=postgres
     volumes:
       - postgres:/var/lib/postgresql/data
-      - ./infra/postgres/01-init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql
+      - ./infra/postgres:/docker-entrypoint-initdb.d
 
   # keycloak
   keycloak:

@@ -14,6 +14,7 @@ https://miro.com/app/board/uXjVMwrHFs8=/?share_link_id=129158561946
 How to run:
 ```
 make buildKeycloak
-sbt auth/docker:publishLocal
+sbt task-tracker/Docker/publishLocal
+sbt auth/Docker/publishLocal
 docker-compose up -d
 ```

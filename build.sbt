@@ -21,7 +21,7 @@ lazy val `task-tracker` =
     .settings(
       name := "task-tracker",
       libraryDependencies ++= zioDeps ++ kafkaDeps ++ zioHTTPDeps ++ circeDeps ++ logDeps,
-      Compile / mainClass  := Some("com.home.FromInsideDocker"),
+      Compile / mainClass  := Some("com.home.tasks.TaskTrackerApp"),
       Docker / packageName := "async_architecture/task-tracker",
       dockerBaseImage      := "eclipse-temurin:17"
     )
@@ -31,7 +31,7 @@ lazy val auth =
     .enablePlugins(ScalafixPlugin, JavaAppPackaging)
     .settings(
       name := "auth",
-      libraryDependencies ++= zioDeps ++ kafkaDeps ++ circeDeps ++ logDeps,
+      libraryDependencies ++= zioDeps ++ kafkaDeps ++ circeDeps ++ logDeps ++ postgresDeps,
       Compile / mainClass  := Some("com.home.keycloak.acl.KeycloakACLApp"),
       Docker / packageName := "async_architecture/auth",
       dockerBaseImage      := "eclipse-temurin:17"
@@ -71,6 +71,8 @@ lazy val zioHTTPVersion  = "3.0.0-RC2"
 lazy val circeVersion    = "0.14.5"
 lazy val logbackVersion  = "1.4.11"
 lazy val keycloakVersion = "22.0.1"
+lazy val doobieVersion   = "1.0.0-RC4"
+lazy val zioCatsVersion  = "23.0.03"
 
 lazy val zioDeps = Seq(
   "dev.zio" %% "zio",
@@ -100,3 +102,17 @@ lazy val keycloakDeps = Seq(
   "org.keycloak" % "keycloak-server-spi-private",
   "org.keycloak" % "keycloak-services"
 ).map(_ % keycloakVersion % Provided)
+
+lazy val postgresDeps = {
+  val doobie = Seq(
+    "org.tpolecat" %% "doobie-core",
+    "org.tpolecat" %% "doobie-hikari",
+    "org.tpolecat" %% "doobie-postgres"
+  ).map(_ % doobieVersion)
+
+  val interop = Seq(
+    "dev.zio" %% "zio-interop-cats" % zioCatsVersion
+  )
+
+  doobie ++ interop
+}
