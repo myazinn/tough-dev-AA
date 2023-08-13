@@ -36,26 +36,19 @@ services:
 
   # keycloak
   keycloak:
-    image: sleighzy/keycloak
+    image: keycloak/keycloak
     container_name: keycloak
     ports:
       - 8081:8080
     networks:
       - aa_app_network
     environment:
-      - KEYCLOAK_USER=admin
-      - KEYCLOAK_PASSWORD=admin
-      - DB_VENDOR=postgres
-      - DB_ADDR=postgres
-      - DB_DATABASE=keycloak
-      - DB_USER=keycloak
-      - DB_PASSWORD=keycloak
-      - KEYCLOAK_IMPORT=/tmp/realm-async_architecture.json
-    depends_on:
-      - postgres
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
     volumes:
-      - ./infra/keycloak/realm-async_architecture.json:/tmp/realm-async_architecture.json
-    command: [ "-Dkeycloak.profile.feature.upload_scripts=enabled" ]
+      - ./infra/keycloak:/opt/keycloak/data/import
+    command:
+      - start-dev --import-realm
 
   # redpanda
   redpanda:
