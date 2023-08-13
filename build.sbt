@@ -10,7 +10,7 @@ inThisBuild(
 
 lazy val root =
   (project in file("."))
-    .aggregate(`task-tracker`, `keycloak-to-kafka`)
+    .aggregate(`task-tracker`, auth, `keycloak-to-kafka`)
     .settings(
       name := "tough-dev-AA"
     )
@@ -23,6 +23,17 @@ lazy val `task-tracker` =
       libraryDependencies ++= zioDeps ++ kafkaDeps ++ zioHTTPDeps ++ circeDeps ++ logDeps,
       Compile / mainClass  := Some("com.home.FromInsideDocker"),
       Docker / packageName := "async_architecture/task-tracker",
+      dockerBaseImage      := "eclipse-temurin:17"
+    )
+
+lazy val auth =
+  (project in file("auth"))
+    .enablePlugins(ScalafixPlugin, JavaAppPackaging)
+    .settings(
+      name := "auth",
+      libraryDependencies ++= zioDeps ++ kafkaDeps ++ circeDeps ++ logDeps,
+      Compile / mainClass  := Some("com.home.keycloak.acl.KeycloakACLApp"),
+      Docker / packageName := "async_architecture/auth",
       dockerBaseImage      := "eclipse-temurin:17"
     )
 

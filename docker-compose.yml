@@ -7,6 +7,17 @@ volumes:
   redpanda: null
   postgres: null
 services:
+  #  business services
+  auth:
+    image: async_architecture/auth:0.1.0
+    networks:
+      - aa_app_network
+    environment:
+      SOME_VAR: todo
+    depends_on:
+      - redpanda
+      - keycloak
+
   # postgres
   postgres:
     image: postgres:latest
