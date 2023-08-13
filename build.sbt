@@ -10,7 +10,7 @@ inThisBuild(
 
 lazy val root =
   (project in file("."))
-    .aggregate(`task-tracker`)
+    .aggregate(`task-tracker`, auth)
     .settings(
       name := "tough-dev-AA"
     )
@@ -20,7 +20,26 @@ lazy val `task-tracker` =
     .enablePlugins(ScalafixPlugin, JavaAppPackaging, DockerPlugin)
     .settings(
       name := "task-tracker",
-      libraryDependencies ++= zioDeps ++ kafkaDeps ++ zioHTTPDeps ++ circeDeps ++ logDeps
+      libraryDependencies ++= zioDeps ++ kafkaDeps ++ zioHTTPDeps ++ circeDeps ++ logDeps,
+      Compile / mainClass  := Some("com.home.FromInsideDocker"),
+      Docker / packageName := "async_architecture/task-tracker",
+      dockerBaseImage      := "eclipse-temurin:17"
+    )
+
+lazy val auth =
+  (project in file("auth"))
+    .enablePlugins(ScalafixPlugin, JavaAppPackaging)
+    .settings(
+      name := "auth",
+      libraryDependencies ++= zioDeps ++ kafkaDeps ++ circeDeps ++ logDeps ++ keycloakDeps,
+      assemblyMergeStrategy := {
+        case PathList("module-info.class")         => MergeStrategy.discard
+        case PathList("META-INF", _*)              => MergeStrategy.first
+        case x if x.endsWith("/module-info.class") => MergeStrategy.discard
+        case x =>
+          val oldStrategy = (ThisBuild / assemblyMergeStrategy).value
+          oldStrategy(x)
+      }
     )
 
 ThisBuild / scalacOptions ++= Seq(
@@ -40,6 +59,7 @@ lazy val zioKafkaVersion = "2.4.2"
 lazy val zioHTTPVersion  = "3.0.0-RC2"
 lazy val circeVersion    = "0.14.5"
 lazy val logbackVersion  = "1.4.11"
+lazy val keycloakVersion = "22.0.1"
 
 lazy val zioDeps = Seq(
   "dev.zio" %% "zio",
@@ -63,3 +83,9 @@ lazy val circeDeps = Seq(
 lazy val logDeps = Seq(
   "ch.qos.logback" % "logback-classic"
 ).map(_ % logbackVersion)
+
+lazy val keycloakDeps = Seq(
+  "org.keycloak" % "keycloak-server-spi",
+  "org.keycloak" % "keycloak-server-spi-private",
+  "org.keycloak" % "keycloak-services"
+).map(_ % keycloakVersion % Provided)

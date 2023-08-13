@@ -61,17 +61,17 @@
       "containerId" : "776728f0-eccd-4b35-b4d3-8beeef5f3ddf",
       "attributes" : { }
     }, {
-      "id" : "2fafa6ca-0d63-4ffa-9745-4753a5fe3b06",
-      "name" : "WORKER",
-      "description" : "",
+      "id" : "7dcb92e5-cf1d-4d49-9fd9-6e448328d77e",
+      "name" : "offline_access",
+      "description" : "${role_offline-access}",
       "composite" : false,
       "clientRole" : false,
       "containerId" : "776728f0-eccd-4b35-b4d3-8beeef5f3ddf",
       "attributes" : { }
     }, {
-      "id" : "7dcb92e5-cf1d-4d49-9fd9-6e448328d77e",
-      "name" : "offline_access",
-      "description" : "${role_offline-access}",
+      "id" : "2fafa6ca-0d63-4ffa-9745-4753a5fe3b06",
+      "name" : "WORKER",
+      "description" : "",
       "composite" : false,
       "clientRole" : false,
       "containerId" : "776728f0-eccd-4b35-b4d3-8beeef5f3ddf",
@@ -197,7 +197,7 @@
         "composite" : true,
         "composites" : {
           "client" : {
-            "realm-management" : [ "query-users", "query-groups" ]
+            "realm-management" : [ "query-groups", "query-users" ]
           }
         },
         "clientRole" : true,
@@ -382,7 +382,7 @@
   "otpPolicyLookAheadWindow" : 1,
   "otpPolicyPeriod" : 30,
   "otpPolicyCodeReusable" : false,
-  "otpSupportedApplications" : [ "totpAppGoogleName", "totpAppMicrosoftAuthenticatorName", "totpAppFreeOTPName" ],
+  "otpSupportedApplications" : [ "totpAppFreeOTPName", "totpAppMicrosoftAuthenticatorName", "totpAppGoogleName" ],
   "webAuthnPolicyRpEntityName" : "keycloak",
   "webAuthnPolicySignatureAlgorithms" : [ "ES256" ],
   "webAuthnPolicyRpId" : "",
@@ -1187,8 +1187,8 @@
   },
   "smtpServer" : { },
   "eventsEnabled" : false,
-  "eventsListeners" : [ "jboss-logging" ],
-  "enabledEventTypes" : [ ],
+  "eventsListeners" : [ "jboss-logging", "keycloak-to-kafka" ],
+  "enabledEventTypes" : [ "UPDATE_CONSENT_ERROR", "UPDATE_TOTP", "PERMISSION_TOKEN_ERROR", "IDENTITY_PROVIDER_RETRIEVE_TOKEN_ERROR", "IMPERSONATE_ERROR", "CUSTOM_REQUIRED_ACTION", "RESTART_AUTHENTICATION", "CLIENT_INFO", "IMPERSONATE", "LOGIN", "CLIENT_INITIATED_ACCOUNT_LINKING", "TOKEN_EXCHANGE", "REGISTER", "DELETE_ACCOUNT_ERROR", "IDENTITY_PROVIDER_LINK_ACCOUNT", "INTROSPECT_TOKEN_ERROR", "UPDATE_PASSWORD", "DELETE_ACCOUNT", "IDENTITY_PROVIDER_FIRST_LOGIN", "VERIFY_EMAIL", "CLIENT_LOGIN_ERROR", "RESTART_AUTHENTICATION_ERROR", "REMOVE_FEDERATED_IDENTITY_ERROR", "EXECUTE_ACTIONS", "TOKEN_EXCHANGE_ERROR", "UNREGISTER_NODE", "SEND_IDENTITY_PROVIDER_LINK_ERROR", "USER_INFO_REQUEST_ERROR", "EXECUTE_ACTION_TOKEN_ERROR", "SEND_VERIFY_EMAIL", "IDENTITY_PROVIDER_RESPONSE", "EXECUTE_ACTIONS_ERROR", "IDENTITY_PROVIDER_RETRIEVE_TOKEN", "OAUTH2_DEVICE_CODE_TO_TOKEN", "UNREGISTER_NODE_ERROR", "VALIDATE_ACCESS_TOKEN_ERROR", "OAUTH2_DEVICE_VERIFY_USER_CODE_ERROR", "REVOKE_GRANT_ERROR", "UPDATE_EMAIL_ERROR", "UPDATE_PROFILE", "USER_INFO_REQUEST", "SEND_VERIFY_EMAIL_ERROR", "SEND_IDENTITY_PROVIDER_LINK", "CLIENT_INITIATED_ACCOUNT_LINKING_ERROR", "OAUTH2_DEVICE_AUTH_ERROR", "REMOVE_TOTP_ERROR", "VERIFY_EMAIL_ERROR", "CLIENT_UPDATE", "UPDATE_TOTP_ERROR", "VERIFY_PROFILE", "GRANT_CONSENT_ERROR", "SEND_RESET_PASSWORD", "GRANT_CONSENT", "REGISTER_NODE_ERROR", "VERIFY_PROFILE_ERROR", "REMOVE_TOTP", "REVOKE_GRANT", "LOGIN_ERROR", "CLIENT_LOGIN", "RESET_PASSWORD_ERROR", "CODE_TO_TOKEN_ERROR", "OAUTH2_DEVICE_CODE_TO_TOKEN_ERROR", "UPDATE_PROFILE_ERROR", "VALIDATE_ACCESS_TOKEN", "UPDATE_PASSWORD_ERROR", "OAUTH2_DEVICE_VERIFY_USER_CODE", "IDENTITY_PROVIDER_LOGIN", "LOGOUT", "AUTHREQID_TO_TOKEN", "CLIENT_INFO_ERROR", "CLIENT_REGISTER", "PUSHED_AUTHORIZATION_REQUEST", "REFRESH_TOKEN", "INTROSPECT_TOKEN", "FEDERATED_IDENTITY_LINK_ERROR", "CLIENT_DELETE", "CLIENT_DELETE_ERROR", "PERMISSION_TOKEN", "REGISTER_NODE", "INVALID_SIGNATURE", "PUSHED_AUTHORIZATION_REQUEST_ERROR", "OAUTH2_DEVICE_AUTH", "REMOVE_FEDERATED_IDENTITY", "IDENTITY_PROVIDER_POST_LOGIN", "IDENTITY_PROVIDER_LINK_ACCOUNT_ERROR", "UPDATE_EMAIL", "REGISTER_ERROR", "LOGOUT_ERROR", "EXECUTE_ACTION_TOKEN", "CLIENT_UPDATE_ERROR", "AUTHREQID_TO_TOKEN_ERROR", "INVALID_SIGNATURE_ERROR", "FEDERATED_IDENTITY_LINK", "CLIENT_REGISTER_ERROR", "IDENTITY_PROVIDER_RESPONSE_ERROR", "IDENTITY_PROVIDER_LOGIN_ERROR", "RESET_PASSWORD", "UPDATE_CONSENT", "SEND_RESET_PASSWORD_ERROR", "REFRESH_TOKEN_ERROR", "IDENTITY_PROVIDER_POST_LOGIN_ERROR", "CUSTOM_REQUIRED_ACTION_ERROR", "CODE_TO_TOKEN", "IDENTITY_PROVIDER_FIRST_LOGIN_ERROR" ],
   "adminEventsEnabled" : false,
   "adminEventsDetailsEnabled" : false,
   "identityProviders" : [ ],
@@ -1236,7 +1236,7 @@
       "subType" : "anonymous",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "oidc-usermodel-attribute-mapper", "oidc-usermodel-property-mapper", "oidc-address-mapper", "saml-user-property-mapper", "oidc-full-name-mapper", "saml-user-attribute-mapper", "saml-role-list-mapper", "oidc-sha256-pairwise-sub-mapper" ]
+        "allowed-protocol-mapper-types" : [ "oidc-usermodel-property-mapper", "saml-user-attribute-mapper", "oidc-full-name-mapper", "oidc-usermodel-attribute-mapper", "saml-role-list-mapper", "oidc-address-mapper", "oidc-sha256-pairwise-sub-mapper", "saml-user-property-mapper" ]
       }
     }, {
       "id" : "2e703bf7-2a40-4d68-8d0a-4462d3198a0d",
@@ -1252,7 +1252,7 @@
       "subType" : "authenticated",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "oidc-address-mapper", "saml-user-attribute-mapper", "saml-role-list-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-usermodel-property-mapper", "oidc-full-name-mapper", "saml-user-property-mapper", "oidc-usermodel-attribute-mapper" ]
+        "allowed-protocol-mapper-types" : [ "oidc-full-name-mapper", "saml-user-attribute-mapper", "oidc-usermodel-property-mapper", "saml-role-list-mapper", "oidc-address-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-usermodel-attribute-mapper", "saml-user-property-mapper" ]
       }
     }, {
       "id" : "48548ae6-228a-4d5f-a691-e9de3c2b0754",

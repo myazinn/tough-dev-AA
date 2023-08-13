@@ -8,16 +8,16 @@ volumes:
   postgres: null
 services:
   #  business services
-  #  task-tracker:
-  #    image: todo
-  #    networks:
-  #      - aa_app_network
-  #    environment:
-  #      SOME_VAR: todo
-  #    depends_on:
-  #      - redpanda
-  #      - postgres
-  #      - keycloak
+  task-tracker:
+    image: async_architecture/task-tracker:0.1.0
+    networks:
+      - aa_app_network
+    environment:
+      SOME_VAR: todo
+    depends_on:
+      - redpanda
+      - postgres
+      - keycloak
 
   # postgres
   postgres:
@@ -36,7 +36,7 @@ services:
 
   # keycloak
   keycloak:
-    image: keycloak/keycloak
+    image:  keycloak-kafka
     container_name: keycloak
     ports:
       - 8081:8080
@@ -49,6 +49,8 @@ services:
       - ./infra/keycloak:/opt/keycloak/data/import
     command:
       - start-dev --import-realm
+    depends_on:
+      - postgres
 
   # redpanda
   redpanda:
