@@ -1,6 +1,7 @@
-.PHONY: buildKeycloak
+.PHONY: build run
 
-buildKeycloak:
-	sbt keycloak-to-kafka/assembly
-	cp keycloak-to-kafka/target/scala-3.3.0/keycloak-to-kafka-assembly-0.1.0.jar infra/keycloak-to-kafka
-	docker build -t keycloak-kafka infra/keycloak-to-kafka
+build:
+	sbt keycloak-to-kafka/assembly task-tracker/Docker/publishLocal auth/Docker/publishLocal
+
+run: build
+	docker-compose up -d

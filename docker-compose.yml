@@ -12,6 +12,11 @@ services:
     image: async_architecture/task-tracker:0.1.0
     networks:
       - aa_app_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
     environment:
       SOME_VAR: todo
     depends_on:
@@ -20,6 +25,11 @@ services:
     image: async_architecture/auth:0.1.0
     networks:
       - aa_app_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
     environment:
       SOME_VAR: todo
     depends_on:
@@ -43,7 +53,7 @@ services:
 
   # keycloak
   keycloak:
-    image:  keycloak-kafka
+    image:  quay.io/keycloak/keycloak:latest
     container_name: keycloak
     ports:
       - 8081:8080
@@ -52,8 +62,14 @@ services:
     environment:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_DB=postgres
+      - KC_DB_URL=jdbc:postgresql://postgres:5432/keycloak
+      - KC_DB_USERNAME=keycloak
+      - KC_DB_PASSWORD=keycloak
+      - KC_HOSTNAME=localhost
     volumes:
       - ./infra/keycloak:/opt/keycloak/data/import
+      - ./keycloak-to-kafka/target/scala-3.3.0/keycloak-to-kafka-assembly-0.1.0.jar:/opt/keycloak/providers/keycloak-to-kafka-assembly-0.1.0.jar
     command:
       - start-dev --import-realm
     depends_on:
