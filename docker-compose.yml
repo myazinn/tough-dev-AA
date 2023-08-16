@@ -111,60 +111,60 @@ services:
       timeout: 3s
       retries: 5
       start_period: 5s
-  console:
-    image: docker.redpanda.com/redpandadata/console:v2.3.0
-    entrypoint: /bin/sh
-    command: -c "echo \"$$CONSOLE_CONFIG_FILE\" > /tmp/config.yml; /app/console"
-    environment:
-      CONFIG_FILEPATH: /tmp/config.yml
-      CONSOLE_CONFIG_FILE: |
-        kafka:
-          brokers: ["redpanda:9092"]
-          schemaRegistry:
-            enabled: true
-            urls: ["http://redpanda:8081"]
-        redpanda:
-          adminApi:
-            enabled: true
-            urls: ["http://redpanda:9644"]
-        connect:
-          enabled: true
-          clusters:
-            - name: local-connect-cluster
-              url: http://connect:8083
-    ports:
-      - 8080:8080
-    networks:
-      - aa_app_network
-    depends_on:
-      - redpanda
-  connect:
-    image: docker.redpanda.com/redpandadata/connectors:latest
-    hostname: connect
-    container_name: connect
-    networks:
-      - aa_app_network
-    # comment platform setting if running not on M1 Mac
-    platform: 'linux/amd64'
-    depends_on:
-      - redpanda
-    ports:
-      - "8083:8083"
-    environment:
-      CONNECT_CONFIGURATION: |
-        key.converter=org.apache.kafka.connect.converters.ByteArrayConverter
-        value.converter=org.apache.kafka.connect.converters.ByteArrayConverter
-        group.id=connectors-cluster
-        offset.storage.topic=_internal_connectors_offsets
-        config.storage.topic=_internal_connectors_configs
-        status.storage.topic=_internal_connectors_status
-        config.storage.replication.factor=-1
-        offset.storage.replication.factor=-1
-        status.storage.replication.factor=-1
-        offset.flush.interval.ms=1000
-        producer.linger.ms=50
-        producer.batch.size=131072
-      CONNECT_BOOTSTRAP_SERVERS: redpanda:9092
-      CONNECT_GC_LOG_ENABLED: "false"
-      CONNECT_HEAP_OPTS: -Xms512M -Xmx512M
-      CONNECT_LOG_LEVEL: info
+#  console:
+#    image: docker.redpanda.com/redpandadata/console:v2.3.0
+#    entrypoint: /bin/sh
+#    command: -c "echo \"$$CONSOLE_CONFIG_FILE\" > /tmp/config.yml; /app/console"
+#    environment:
+#      CONFIG_FILEPATH: /tmp/config.yml
+#      CONSOLE_CONFIG_FILE: |
+#        kafka:
+#          brokers: ["redpanda:9092"]
+#          schemaRegistry:
+#            enabled: true
+#            urls: ["http://redpanda:8081"]
+#        redpanda:
+#          adminApi:
+#            enabled: true
+#            urls: ["http://redpanda:9644"]
+#        connect:
+#          enabled: true
+#          clusters:
+#            - name: local-connect-cluster
+#              url: http://connect:8083
+#    ports:
+#      - 8080:8080
+#    networks:
+#      - aa_app_network
+#    depends_on:
+#      - redpanda
+#  connect:
+#    image: docker.redpanda.com/redpandadata/connectors:latest
+#    hostname: connect
+#    container_name: connect
+#    networks:
+#      - aa_app_network
+#    # comment platform setting if running not on M1 Mac
+#    platform: 'linux/amd64'
+#    depends_on:
+#      - redpanda
+#    ports:
+#      - "8083:8083"
+#    environment:
+#      CONNECT_CONFIGURATION: |
+#        key.converter=org.apache.kafka.connect.converters.ByteArrayConverter
+#        value.converter=org.apache.kafka.connect.converters.ByteArrayConverter
+#        group.id=connectors-cluster
+#        offset.storage.topic=_internal_connectors_offsets
+#        config.storage.topic=_internal_connectors_configs
+#        status.storage.topic=_internal_connectors_status
+#        config.storage.replication.factor=-1
+#        offset.storage.replication.factor=-1
+#        status.storage.replication.factor=-1
+#        offset.flush.interval.ms=1000
+#        producer.linger.ms=50
+#        producer.batch.size=131072
+#      CONNECT_BOOTSTRAP_SERVERS: redpanda:9092
+#      CONNECT_GC_LOG_ENABLED: "false"
+#      CONNECT_HEAP_OPTS: -Xms512M -Xmx512M
+#      CONNECT_LOG_LEVEL: info
