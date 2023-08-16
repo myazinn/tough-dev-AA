@@ -7,9 +7,17 @@ volumes:
   redpanda: null
   postgres: null
 services:
+
+  nginx:
+    image: nginx
+    container_name: nginx
+    networks:
+      - aa_app_network
+
   #  business services
   task-tracker:
     image: async_architecture/task-tracker:0.1.0
+    container_name: task-tracker
     networks:
       - aa_app_network
     deploy:
@@ -23,6 +31,7 @@ services:
       - redpanda
   auth:
     image: async_architecture/auth:0.1.0
+    container_name: auth
     networks:
       - aa_app_network
     deploy:
@@ -56,7 +65,7 @@ services:
     image:  quay.io/keycloak/keycloak:latest
     container_name: keycloak
     ports:
-      - 8081:8080
+      - 8080:8080
     networks:
       - aa_app_network
     environment:
@@ -75,9 +84,41 @@ services:
     depends_on:
       - postgres
 
+  oauth2-proxy:
+    image: bitnami/oauth2-proxy:latest
+    container_name: oauth2-proxy
+    networks:
+      - aa_app_network
+    command:
+      - --http-address
+      - 0.0.0.0:4180
+    environment:
+      OAUTH2_PROXY_UPSTREAMS: http://nginx/
+      OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: Keycloak
+      OAUTH2_PROXY_PROVIDER: keycloak-oidc
+      OAUTH2_PROXY_OIDC_ISSUER_URL: http://localhost:8080/realms/async_architecture
+      OAUTH2_PROXY_CLIENT_ID: my-app
+      OAUTH2_PROXY_CLIENT_SECRET: Ke9Un7uXIZ3HCH9ovJt8yrAb5NNVfBy0
+      OAUTH2_PROXY_PASS_ACCESS_TOKEN: true
+      OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: true
+      OAUTH2_PROXY_EMAIL_DOMAINS: '*'
+      OAUTH2_PROXY_REDIRECT_URL: http://localhost:4180/oauth2/callback
+      OAUTH2_PROXY_COOKIE_SECRET: 649895bc3878deb9d092aace6036bbbb
+      OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: true
+      OAUTH2_PROXY_COOKIE_SECURE: false
+      OAUTH2_PROXY_LOGIN_URL: http://localhost:8080/realms/async_architecture/protocol/openid-connect/auth
+      OAUTH2_PROXY_REDEEM_URL: http://keycloak:8080/realms/async_architecture/protocol/openid-connect/token
+      OAUTH2_PROXY_OIDC_JWKS_URL: http://keycloak:8080/realms/async_architecture/protocol/openid-connect/certs
+      OAUTH2_PROXY_COOKIE_CSRF_PER_REQUEST: true
+    ports:
+      - 4180:4180
+    depends_on:
+      - keycloak
+
   # redpanda
   redpanda:
     image: docker.redpanda.com/redpandadata/redpanda:v23.2.2
+    container_name: redpanda
     command:
       - redpanda start
       - --smp 1
@@ -113,6 +154,7 @@ services:
       start_period: 5s
 #  console:
 #    image: docker.redpanda.com/redpandadata/console:v2.3.0
+#    container_name: redpanda-console
 #    entrypoint: /bin/sh
 #    command: -c "echo \"$$CONSOLE_CONFIG_FILE\" > /tmp/config.yml; /app/console"
 #    environment:
@@ -140,8 +182,7 @@ services:
 #      - redpanda
 #  connect:
 #    image: docker.redpanda.com/redpandadata/connectors:latest
-#    hostname: connect
-#    container_name: connect
+#    container_name: redpanda-connect
 #    networks:
 #      - aa_app_network
 #    # comment platform setting if running not on M1 Mac
