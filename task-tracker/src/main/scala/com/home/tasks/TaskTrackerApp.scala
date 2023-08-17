@@ -10,7 +10,7 @@ object TaskTrackerApp extends ZIOAppDefault:
   private val brokers = List("redpanda:9092")
 
   private val usersStreamingTopic  = "users-streaming"
-  private val userRoleUpdatedTopic = "user-role-updates"
+  private val userRoleUpdatedTopic = "users-roles"
 
   override def run: ZIO[Scope, Any, Any] =
     val consumerSettings = ConsumerSettings(brokers).withGroupId("task-tracker")

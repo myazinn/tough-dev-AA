@@ -22,7 +22,7 @@ object KeycloakACLApp extends ZIOAppDefault:
   private val rawAdminEventsTopic = "keycloak-raw-admin-events"
 
   private val usersStreamingTopic  = "users-streaming"
-  private val userRoleUpdatedTopic = "user-role-updates"
+  private val userRoleUpdatedTopic = "users-roles"
 
   override def run: ZIO[Scope, Any, Any] =
     val consumeMessages =
