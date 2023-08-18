@@ -18,7 +18,7 @@ object UserCUD:
       Json.obj(
         "user_id"    -> user.userId.asJson,
         "username"   -> user.username.asJson,
-        "email"      -> user.username.asJson,
+        "email"      -> user.email.asJson,
         "first_name" -> user.firstName.asJson,
         "last_name"  -> user.lastName.asJson,
         "roles"      -> user.roles.asJson

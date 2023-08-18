@@ -91,7 +91,8 @@ object DoobieUserRepository:
                |  email TEXT NOT NULL,
                |  first_name TEXT NOT NULL,
                |  last_name TEXT NOT NULL,
-               |  roles TEXT NOT NULL
+               |  roles TEXT NOT NULL,
+               |  CONSTRAINT email_unique UNIQUE (email)
                |)
                |""".stripMargin.update.run
             .transact(transactor)
