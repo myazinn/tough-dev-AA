@@ -59,9 +59,9 @@ final case class TaskServiceRoutesLive(taskService: TaskService) extends TaskSer
 
   end routes
 
-  private given Encoder[PapugId]     = Encoder.encodeString.contramap(id => PapugId.unwrap(id))
-  private given Encoder[TaskId]      = Encoder.encodeString.contramap(id => TaskId.unwrap(id))
-  private given Encoder[Email]       = Encoder.encodeString.contramap(id => Email.unwrap(id))
+  private given Encoder[PapugId]     = Encoder.encodeString.contramap(PapugId.unwrap)
+  private given Encoder[TaskId]      = Encoder.encodeString.contramap(TaskId.unwrap)
+  private given Encoder[Email]       = Encoder.encodeString.contramap(Email.unwrap)
   private given Encoder[Task.Status] = Encoder.encodeString.contramap(_.toString)
 
   private def withDecodedBody[R, E, Entity: Decoder](
