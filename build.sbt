@@ -4,13 +4,14 @@ inThisBuild(
     scalaVersion      := "3.3.0",
     version           := "0.1.0",
     semanticdbEnabled := true,
-    semanticdbVersion := scalafixSemanticdb.revision
+    semanticdbVersion := scalafixSemanticdb.revision,
+    resolvers ++= Seq("Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/")
   )
 )
 
 lazy val root =
   (project in file("."))
-    .aggregate(`task-tracker`, `keycloak-to-kafka`)
+    .aggregate(`task-tracker`, auth, `keycloak-to-kafka`)
     .settings(
       name := "tough-dev-AA"
     )
@@ -20,9 +21,20 @@ lazy val `task-tracker` =
     .enablePlugins(ScalafixPlugin, JavaAppPackaging, DockerPlugin)
     .settings(
       name := "task-tracker",
-      libraryDependencies ++= zioDeps ++ kafkaDeps ++ zioHTTPDeps ++ circeDeps ++ logDeps,
-      Compile / mainClass  := Some("com.home.FromInsideDocker"),
+      libraryDependencies ++= zioDeps ++ kafkaDeps ++ zioHTTPDeps ++ circeDeps ++ logDeps ++ newtypeDeps ++ postgresDeps,
+      Compile / mainClass  := Some("com.home.tasks.TaskTrackerApp"),
       Docker / packageName := "async_architecture/task-tracker",
+      dockerBaseImage      := "eclipse-temurin:17"
+    )
+
+lazy val auth =
+  (project in file("auth"))
+    .enablePlugins(ScalafixPlugin, JavaAppPackaging)
+    .settings(
+      name := "auth",
+      libraryDependencies ++= zioDeps ++ kafkaDeps ++ circeDeps ++ logDeps ++ postgresDeps,
+      Compile / mainClass  := Some("com.home.keycloak.acl.KeycloakACLApp"),
+      Docker / packageName := "async_architecture/auth",
       dockerBaseImage      := "eclipse-temurin:17"
     )
 
@@ -56,10 +68,12 @@ ThisBuild / scalacOptions ++= Seq(
 
 lazy val zioVersion      = "2.0.15"
 lazy val zioKafkaVersion = "2.4.2"
-lazy val zioHTTPVersion  = "3.0.0-RC2"
+lazy val zioHTTPVersion  = "3.0.0-RC2+58-020f6f95-SNAPSHOT"
 lazy val circeVersion    = "0.14.5"
 lazy val logbackVersion  = "1.4.11"
 lazy val keycloakVersion = "22.0.1"
+lazy val doobieVersion   = "1.0.0-RC4"
+lazy val zioCatsVersion  = "23.0.03"
 
 lazy val zioDeps = Seq(
   "dev.zio" %% "zio",
@@ -89,3 +103,21 @@ lazy val keycloakDeps = Seq(
   "org.keycloak" % "keycloak-server-spi-private",
   "org.keycloak" % "keycloak-services"
 ).map(_ % keycloakVersion % Provided)
+
+lazy val postgresDeps = {
+  val doobie = Seq(
+    "org.tpolecat" %% "doobie-core",
+    "org.tpolecat" %% "doobie-hikari",
+    "org.tpolecat" %% "doobie-postgres"
+  ).map(_ % doobieVersion)
+
+  val interop = Seq(
+    "dev.zio" %% "zio-interop-cats" % zioCatsVersion
+  )
+
+  doobie ++ interop
+}
+
+lazy val newtypeDeps = Seq(
+  "dev.zio" %% "zio-prelude" % "1.0.0-RC20"
+)

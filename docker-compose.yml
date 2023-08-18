@@ -7,6 +7,50 @@ volumes:
   redpanda: null
   postgres: null
 services:
+
+  nginx:
+    image: nginx
+    container_name: nginx
+    networks:
+      - aa_app_network
+    depends_on:
+      - task-tracker
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf
+
+  #  business services
+  task-tracker:
+    image: async_architecture/task-tracker:0.1.0
+    container_name: task-tracker
+    ports: # keeping it open for debug purposes
+      - 8000:8000
+    networks:
+      - aa_app_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    environment:
+      SOME_VAR: todo
+    depends_on:
+      - redpanda
+  auth:
+    image: async_architecture/auth:0.1.0
+    container_name: auth
+    networks:
+      - aa_app_network
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    environment:
+      SOME_VAR: todo
+    depends_on:
+      - redpanda
+      - keycloak
+
   # postgres
   postgres:
     image: postgres:latest
@@ -20,29 +64,67 @@ services:
       - POSTGRES_PASSWORD=postgres
     volumes:
       - postgres:/var/lib/postgresql/data
-      - ./infra/postgres/01-init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql
+      - ./infra/postgres:/docker-entrypoint-initdb.d
 
   # keycloak
   keycloak:
-    image:  keycloak-kafka
+    image: quay.io/keycloak/keycloak:latest
     container_name: keycloak
     ports:
-      - 8081:8080
+      - 8080:8080
     networks:
       - aa_app_network
     environment:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_DB=postgres
+      - KC_DB_URL=jdbc:postgresql://postgres:5432/keycloak
+      - KC_DB_USERNAME=keycloak
+      - KC_DB_PASSWORD=keycloak
+      - KC_HOSTNAME=localhost
     volumes:
       - ./infra/keycloak:/opt/keycloak/data/import
+      - ./keycloak-to-kafka/target/scala-3.3.0/keycloak-to-kafka-assembly-0.1.0.jar:/opt/keycloak/providers/keycloak-to-kafka-assembly-0.1.0.jar
     command:
       - start-dev --import-realm
     depends_on:
       - postgres
 
+  oauth2-proxy:
+    image: bitnami/oauth2-proxy:latest
+    container_name: oauth2-proxy
+    networks:
+      - aa_app_network
+    command:
+      - --http-address
+      - 0.0.0.0:4180
+    environment:
+      OAUTH2_PROXY_UPSTREAMS: http://nginx/
+      OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: Keycloak
+      OAUTH2_PROXY_PROVIDER: keycloak-oidc
+      OAUTH2_PROXY_OIDC_ISSUER_URL: http://localhost:8080/realms/async_architecture
+      OAUTH2_PROXY_CLIENT_ID: my-app
+      OAUTH2_PROXY_CLIENT_SECRET: Ke9Un7uXIZ3HCH9ovJt8yrAb5NNVfBy0
+      OAUTH2_PROXY_PASS_ACCESS_TOKEN: true
+      OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: true
+      OAUTH2_PROXY_EMAIL_DOMAINS: '*'
+      OAUTH2_PROXY_REDIRECT_URL: http://localhost:80/oauth2/callback
+      OAUTH2_PROXY_COOKIE_SECRET: 649895bc3878deb9d092aace6036bbbb
+      OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: true
+      OAUTH2_PROXY_COOKIE_SECURE: false
+      OAUTH2_PROXY_LOGIN_URL: http://localhost:8080/realms/async_architecture/protocol/openid-connect/auth
+      OAUTH2_PROXY_REDEEM_URL: http://keycloak:8080/realms/async_architecture/protocol/openid-connect/token
+      OAUTH2_PROXY_OIDC_JWKS_URL: http://keycloak:8080/realms/async_architecture/protocol/openid-connect/certs
+      OAUTH2_PROXY_COOKIE_CSRF_PER_REQUEST: true
+    ports:
+      - 80:4180
+    depends_on:
+      - keycloak
+
   # redpanda
   redpanda:
     image: docker.redpanda.com/redpandadata/redpanda:v23.2.2
+    container_name: redpanda
     command:
       - redpanda start
       - --smp 1
@@ -76,60 +158,60 @@ services:
       timeout: 3s
       retries: 5
       start_period: 5s
-  console:
-    image: docker.redpanda.com/redpandadata/console:v2.3.0
-    entrypoint: /bin/sh
-    command: -c "echo \"$$CONSOLE_CONFIG_FILE\" > /tmp/config.yml; /app/console"
-    environment:
-      CONFIG_FILEPATH: /tmp/config.yml
-      CONSOLE_CONFIG_FILE: |
-        kafka:
-          brokers: ["redpanda:9092"]
-          schemaRegistry:
-            enabled: true
-            urls: ["http://redpanda:8081"]
-        redpanda:
-          adminApi:
-            enabled: true
-            urls: ["http://redpanda:9644"]
-        connect:
-          enabled: true
-          clusters:
-            - name: local-connect-cluster
-              url: http://connect:8083
-    ports:
-      - 8080:8080
-    networks:
-      - aa_app_network
-    depends_on:
-      - redpanda
-  connect:
-    image: docker.redpanda.com/redpandadata/connectors:latest
-    hostname: connect
-    container_name: connect
-    networks:
-      - aa_app_network
-    # comment platform setting if running not on M1 Mac
-    platform: 'linux/amd64'
-    depends_on:
-      - redpanda
-    ports:
-      - "8083:8083"
-    environment:
-      CONNECT_CONFIGURATION: |
-        key.converter=org.apache.kafka.connect.converters.ByteArrayConverter
-        value.converter=org.apache.kafka.connect.converters.ByteArrayConverter
-        group.id=connectors-cluster
-        offset.storage.topic=_internal_connectors_offsets
-        config.storage.topic=_internal_connectors_configs
-        status.storage.topic=_internal_connectors_status
-        config.storage.replication.factor=-1
-        offset.storage.replication.factor=-1
-        status.storage.replication.factor=-1
-        offset.flush.interval.ms=1000
-        producer.linger.ms=50
-        producer.batch.size=131072
-      CONNECT_BOOTSTRAP_SERVERS: redpanda:9092
-      CONNECT_GC_LOG_ENABLED: "false"
-      CONNECT_HEAP_OPTS: -Xms512M -Xmx512M
-      CONNECT_LOG_LEVEL: info
+#  console:
+#    image: docker.redpanda.com/redpandadata/console:v2.3.0
+#    container_name: redpanda-console
+#    entrypoint: /bin/sh
+#    command: -c "echo \"$$CONSOLE_CONFIG_FILE\" > /tmp/config.yml; /app/console"
+#    environment:
+#      CONFIG_FILEPATH: /tmp/config.yml
+#      CONSOLE_CONFIG_FILE: |
+#        kafka:
+#          brokers: ["redpanda:9092"]
+#          schemaRegistry:
+#            enabled: true
+#            urls: ["http://redpanda:8081"]
+#        redpanda:
+#          adminApi:
+#            enabled: true
+#            urls: ["http://redpanda:9644"]
+#        connect:
+#          enabled: true
+#          clusters:
+#            - name: local-connect-cluster
+#              url: http://connect:8083
+#    ports:
+#      - 8080:8080
+#    networks:
+#      - aa_app_network
+#    depends_on:
+#      - redpanda
+#  connect:
+#    image: docker.redpanda.com/redpandadata/connectors:latest
+#    container_name: redpanda-connect
+#    networks:
+#      - aa_app_network
+#    # comment platform setting if running not on M1 Mac
+#    platform: 'linux/amd64'
+#    depends_on:
+#      - redpanda
+#    ports:
+#      - "8083:8083"
+#    environment:
+#      CONNECT_CONFIGURATION: |
+#        key.converter=org.apache.kafka.connect.converters.ByteArrayConverter
+#        value.converter=org.apache.kafka.connect.converters.ByteArrayConverter
+#        group.id=connectors-cluster
+#        offset.storage.topic=_internal_connectors_offsets
+#        config.storage.topic=_internal_connectors_configs
+#        status.storage.topic=_internal_connectors_status
+#        config.storage.replication.factor=-1
+#        offset.storage.replication.factor=-1
+#        status.storage.replication.factor=-1
+#        offset.flush.interval.ms=1000
+#        producer.linger.ms=50
+#        producer.batch.size=131072
+#      CONNECT_BOOTSTRAP_SERVERS: redpanda:9092
+#      CONNECT_GC_LOG_ENABLED: "false"
+#      CONNECT_HEAP_OPTS: -Xms512M -Xmx512M
+#      CONNECT_LOG_LEVEL: info
