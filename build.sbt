@@ -4,7 +4,8 @@ inThisBuild(
     scalaVersion      := "3.3.0",
     version           := "0.1.0",
     semanticdbEnabled := true,
-    semanticdbVersion := scalafixSemanticdb.revision
+    semanticdbVersion := scalafixSemanticdb.revision,
+    resolvers ++= Seq("Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/")
   )
 )
 
@@ -20,7 +21,7 @@ lazy val `task-tracker` =
     .enablePlugins(ScalafixPlugin, JavaAppPackaging, DockerPlugin)
     .settings(
       name := "task-tracker",
-      libraryDependencies ++= zioDeps ++ kafkaDeps ++ zioHTTPDeps ++ circeDeps ++ logDeps,
+      libraryDependencies ++= zioDeps ++ kafkaDeps ++ zioHTTPDeps ++ circeDeps ++ logDeps ++ newtypeDeps ++ postgresDeps,
       Compile / mainClass  := Some("com.home.tasks.TaskTrackerApp"),
       Docker / packageName := "async_architecture/task-tracker",
       dockerBaseImage      := "eclipse-temurin:17"
@@ -67,7 +68,7 @@ ThisBuild / scalacOptions ++= Seq(
 
 lazy val zioVersion      = "2.0.15"
 lazy val zioKafkaVersion = "2.4.2"
-lazy val zioHTTPVersion  = "3.0.0-RC2"
+lazy val zioHTTPVersion  = "3.0.0-RC2+58-020f6f95-SNAPSHOT"
 lazy val circeVersion    = "0.14.5"
 lazy val logbackVersion  = "1.4.11"
 lazy val keycloakVersion = "22.0.1"
@@ -116,3 +117,7 @@ lazy val postgresDeps = {
 
   doobie ++ interop
 }
+
+lazy val newtypeDeps = Seq(
+  "dev.zio" %% "zio-prelude" % "1.0.0-RC20"
+)

@@ -1,31 +1,52 @@
 package com.home.tasks
 
+import com.home.tasks.adapters.*
+import com.home.tasks.repo.*
+import com.home.tasks.service.*
+import com.zaxxer.hikari.HikariConfig
+import doobie.hikari.HikariTransactor
+
 import zio.*
+import zio.http.Server
+import zio.interop.catz.*
 import zio.kafka.consumer.*
-import zio.kafka.consumer.diagnostics.Diagnostics
-import zio.kafka.serde.Serde
 
 object TaskTrackerApp extends ZIOAppDefault:
 
   private val brokers = List("redpanda:9092")
 
-  private val usersStreamingTopic  = "users-streaming"
-  private val userRoleUpdatedTopic = "users-roles"
-
   override def run: ZIO[Scope, Any, Any] =
-    val consumerSettings = ConsumerSettings(brokers).withGroupId("task-tracker")
+    val consumeMessages = ZIO.serviceWithZIO[PapugListener](_.listenUpdates)
 
-    val consumerMessages =
-      Consumer
-        .plainStream(Subscription.topics(usersStreamingTopic, userRoleUpdatedTopic), Serde.byteArray, Serde.string)
-        .runForeach { record =>
-          ZIO.debug(s"Received: ${record.value} from ${record.record.topic()}")
-        }
+    val runHTTPServer =
+      for
+        routes <- ZIO.serviceWith[TaskServiceRoutes](_.routes)
+        _      <- Server.serve(routes.toHttpApp)
+      yield ()
 
-    val program = consumerMessages
+    val app = runHTTPServer.race(consumeMessages)
 
-    program.provide(
-      Consumer.live,
-      ZLayer.succeed(Diagnostics.NoOp),
-      ZLayer.succeed(consumerSettings)
+    val consumerSettings = ZLayer.succeed(ConsumerSettings(brokers).withGroupId("task-tracker"))
+    val transactor =
+      ZLayer.scoped {
+        val config = new HikariConfig()
+        config.setDriverClassName("org.postgresql.Driver")
+        config.setJdbcUrl("jdbc:postgresql://postgres:5432/tasktracker")
+        config.setUsername("tasktracker")
+        config.setPassword("tasktracker")
+        config.setMaximumPoolSize(32)
+        HikariTransactor.fromHikariConfig[Task](config).toScopedZIO
+      }
+
+    app.provideSome[Scope](
+      TaskServiceRoutesLive.live,
+      KafkaPapugListener.live,
+      TaskServiceLive.live,
+      PapugServiceLive.live,
+      TaskPublisherLive.live,
+      Server.defaultWithPort(8000),
+      DoobieTaskRepo.live,
+      DoobiePapugRepo.live,
+      transactor,
+      consumerSettings
     )

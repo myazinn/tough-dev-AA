@@ -13,11 +13,17 @@ services:
     container_name: nginx
     networks:
       - aa_app_network
+    depends_on:
+      - task-tracker
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf
 
   #  business services
   task-tracker:
     image: async_architecture/task-tracker:0.1.0
     container_name: task-tracker
+    ports: # keeping it open for debug purposes
+      - 8000:8000
     networks:
       - aa_app_network
     deploy:
@@ -62,7 +68,7 @@ services:
 
   # keycloak
   keycloak:
-    image:  quay.io/keycloak/keycloak:latest
+    image: quay.io/keycloak/keycloak:latest
     container_name: keycloak
     ports:
       - 8080:8080
@@ -102,7 +108,7 @@ services:
       OAUTH2_PROXY_PASS_ACCESS_TOKEN: true
       OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: true
       OAUTH2_PROXY_EMAIL_DOMAINS: '*'
-      OAUTH2_PROXY_REDIRECT_URL: http://localhost:4180/oauth2/callback
+      OAUTH2_PROXY_REDIRECT_URL: http://localhost:80/oauth2/callback
       OAUTH2_PROXY_COOKIE_SECRET: 649895bc3878deb9d092aace6036bbbb
       OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: true
       OAUTH2_PROXY_COOKIE_SECURE: false
@@ -111,7 +117,7 @@ services:
       OAUTH2_PROXY_OIDC_JWKS_URL: http://keycloak:8080/realms/async_architecture/protocol/openid-connect/certs
       OAUTH2_PROXY_COOKIE_CSRF_PER_REQUEST: true
     ports:
-      - 4180:4180
+      - 80:4180
     depends_on:
       - keycloak
 
