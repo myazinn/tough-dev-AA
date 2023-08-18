@@ -51,12 +51,7 @@ final case class TaskServiceRoutesLive(taskService: TaskService) extends TaskSer
           .fold(errorToResponse, _ => jsonResponse(s"$taskId is done!"))
       }
 
-    val readHeaders =
-      GET / "tasks" / "headers" -> handler { (r: Request) =>
-        jsonResponse(r.headers.map(h => h.headerName -> h.renderedValue).toMap)
-      }
-
-    Routes(getTasks, createTask, reassignTasks, completeTask, readHeaders)
+    Routes(getTasks, createTask, reassignTasks, completeTask)
       .transform: h =>
         h.catchAllCause: cause =>
           handler:
