@@ -45,21 +45,19 @@ object DoobieTaskRepo:
 
 final case class DoobieTaskRepo(transactor: Transactor[ZTask]) extends TaskRepo:
   override def upsert(tasks: Chunk[Task]): UIO[Unit] =
-    // todo use batch insert
-    def upsertOne(task: Task): ZTask[Any] =
-      sql"""INSERT INTO tasks (public_id, papug_id, title, description, status, updated_at)
-           | VALUES (${task.publicId}, ${task.papugId}, ${task.title}, ${task.description}, ${task.status}, ${task.updatedAt})
-           | ON CONFLICT (public_id)
-           |  DO UPDATE SET
-           |    papug_id = ${task.papugId},
-           |    title = ${task.title},
-           |    description = ${task.description},
-           |    status = ${task.status},
-           |    updated_at = ${task.updatedAt}
-           |""".stripMargin.update.run
-        .transact(transactor)
+    val sql =
+      """INSERT INTO tasks (public_id, papug_id, title, description, status, updated_at)
+        | VALUES (?, ?, ?, ?, ?, ?)
+        | ON CONFLICT (public_id)
+        |  DO UPDATE SET
+        |    papug_id = EXCLUDED.papug_id,
+        |    title = EXCLUDED.title,
+        |    description = EXCLUDED.description,
+        |    status = EXCLUDED.status,
+        |    updated_at = EXCLUDED.updated_at
+        |""".stripMargin
 
-    ZIO.foreachParDiscard(tasks)(upsertOne).unit.orDie
+    Update[Task](sql).updateMany(tasks).transact(transactor).orDie.unit
   end upsert
 
   override def findById(id: TaskId): UIO[Option[Task]] =
