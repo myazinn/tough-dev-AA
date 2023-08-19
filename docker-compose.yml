@@ -24,7 +24,7 @@ services:
     image: async_architecture/task-tracker:0.1.0
     container_name: task-tracker
     ports: # keeping it open for debug purposes
-      - 8000:8000
+      - "8000:8000"
     networks:
       - aa_app_network
     deploy:
@@ -41,7 +41,7 @@ services:
     image: async_architecture/accounting:0.1.0
     container_name: accounting
     ports: # keeping it open for debug purposes
-      - 8001:8001
+      - "8001:8001"
     networks:
       - aa_app_network
     deploy:
@@ -76,7 +76,7 @@ services:
     image: postgres:latest
     container_name: postgres
     ports:
-      - 5432:5432
+      - "5432:5432"
     networks:
       - aa_app_network
     environment:
@@ -91,7 +91,7 @@ services:
     image: quay.io/keycloak/keycloak:latest
     container_name: keycloak
     ports:
-      - 8080:8080
+      - "8080:8080"
     networks:
       - aa_app_network
     environment:
@@ -137,7 +137,7 @@ services:
       OAUTH2_PROXY_OIDC_JWKS_URL: http://keycloak:8080/realms/async_architecture/protocol/openid-connect/certs
       OAUTH2_PROXY_COOKIE_CSRF_PER_REQUEST: true
     ports:
-      - 80:4180
+      - "80:4180"
     depends_on:
       - keycloak
 
@@ -164,10 +164,10 @@ services:
       - --rpc-addr redpanda:33145
       - --advertise-rpc-addr redpanda:33145
     ports:
-      - 18081:18081
-      - 18082:18082
-      - 19092:19092
-      - 19644:9644
+      - "18081:18081"
+      - "18082:18082"
+      - "19092:19092"
+      - "19644:9644"
     volumes:
       - redpanda:/var/lib/redpanda/data
     networks:
