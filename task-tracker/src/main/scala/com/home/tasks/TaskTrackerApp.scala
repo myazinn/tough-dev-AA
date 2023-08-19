@@ -43,7 +43,7 @@ object TaskTrackerApp extends ZIOAppDefault:
       KafkaPapugListener.live,
       TaskServiceLive.live,
       PapugServiceLive.live,
-      TaskPublisherLive.live,
+      KafkaTaskPublisher.live,
       Server.defaultWithPort(8000),
       DoobieTaskRepo.live,
       DoobiePapugRepo.live,
