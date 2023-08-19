@@ -35,6 +35,7 @@ services:
       SOME_VAR: todo
     depends_on:
       - redpanda
+      - postgres
   auth:
     image: async_architecture/auth:0.1.0
     container_name: auth
@@ -50,6 +51,7 @@ services:
     depends_on:
       - redpanda
       - keycloak
+      - postgres
 
   # postgres
   postgres:
