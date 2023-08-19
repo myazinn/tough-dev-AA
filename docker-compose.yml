@@ -178,34 +178,34 @@ services:
       timeout: 3s
       retries: 5
       start_period: 5s
-#  console:
-#    image: docker.redpanda.com/redpandadata/console:v2.3.0
-#    container_name: redpanda-console
-#    entrypoint: /bin/sh
-#    command: -c "echo \"$$CONSOLE_CONFIG_FILE\" > /tmp/config.yml; /app/console"
-#    environment:
-#      CONFIG_FILEPATH: /tmp/config.yml
-#      CONSOLE_CONFIG_FILE: |
-#        kafka:
-#          brokers: ["redpanda:9092"]
-#          schemaRegistry:
-#            enabled: true
-#            urls: ["http://redpanda:8081"]
-#        redpanda:
-#          adminApi:
-#            enabled: true
-#            urls: ["http://redpanda:9644"]
-#        connect:
-#          enabled: true
-#          clusters:
-#            - name: local-connect-cluster
-#              url: http://connect:8083
-#    ports:
-#      - 8080:8080
-#    networks:
-#      - aa_app_network
-#    depends_on:
-#      - redpanda
+  console:
+    image: docker.redpanda.com/redpandadata/console:v2.3.0
+    container_name: redpanda-console
+    entrypoint: /bin/sh
+    command: -c "echo \"$$CONSOLE_CONFIG_FILE\" > /tmp/config.yml; /app/console"
+    environment:
+      CONFIG_FILEPATH: /tmp/config.yml
+      CONSOLE_CONFIG_FILE: |
+        kafka:
+          brokers: ["redpanda:9092"]
+          schemaRegistry:
+            enabled: true
+            urls: ["http://redpanda:8081"]
+        redpanda:
+          adminApi:
+            enabled: true
+            urls: ["http://redpanda:9644"]
+        connect:
+          enabled: false
+          clusters:
+            - name: local-connect-cluster
+              url: http://connect:8083
+    ports:
+      - 8090:8080
+    networks:
+      - aa_app_network
+    depends_on:
+      - redpanda
 #  connect:
 #    image: docker.redpanda.com/redpandadata/connectors:latest
 #    container_name: redpanda-connect
