@@ -1,6 +1,7 @@
 package com.home.tasks.repo
 
 import java.sql.Timestamp
+import java.time.Instant
 
 import com.home.tasks.model.Task.Status
 import com.home.tasks.model.*
@@ -46,16 +47,15 @@ final case class DoobieTaskRepo(transactor: Transactor[ZTask]) extends TaskRepo:
   override def upsert(tasks: Chunk[Task]): UIO[Unit] =
     // todo use batch insert
     def upsertOne(task: Task): ZTask[Any] =
-      val t = TaskInternal.fromTask(task)
       sql"""INSERT INTO tasks (public_id, papug_id, title, description, status, updated_at)
-           | VALUES (${t.publicId}, ${t.papugId}, ${t.title}, ${t.description}, ${t.status}, ${t.updatedAt})
+           | VALUES (${task.publicId}, ${task.papugId}, ${task.title}, ${task.description}, ${task.status}, ${task.updatedAt})
            | ON CONFLICT (public_id)
            |  DO UPDATE SET
-           |    papug_id = ${t.papugId},
-           |    title = ${t.title},
-           |    description = ${t.description},
-           |    status = ${t.status},
-           |    updated_at = ${t.updatedAt}
+           |    papug_id = ${task.papugId},
+           |    title = ${task.title},
+           |    description = ${task.description},
+           |    status = ${task.status},
+           |    updated_at = ${task.updatedAt}
            |""".stripMargin.update.run
         .transact(transactor)
 
@@ -66,8 +66,7 @@ final case class DoobieTaskRepo(transactor: Transactor[ZTask]) extends TaskRepo:
     sql"""SELECT public_id, papug_id, title, description, status, updated_at
          | FROM tasks
          | WHERE public_id = ${TaskId.unwrap(id)}""".stripMargin
-      .query[TaskInternal]
-      .map(TaskInternal.toTask)
+      .query[Task]
       .option
       .transact(transactor)
       .orDie
@@ -76,8 +75,7 @@ final case class DoobieTaskRepo(transactor: Transactor[ZTask]) extends TaskRepo:
     sql"""SELECT public_id, papug_id, title, description, status, updated_at
          | FROM tasks
          | WHERE papug_id = ${PapugId.unwrap(papug)}""".stripMargin
-      .query[TaskInternal]
-      .map(TaskInternal.toTask)
+      .query[Task]
       .stream
       .transact(transactor)
       .toZStream()
@@ -87,37 +85,22 @@ final case class DoobieTaskRepo(transactor: Transactor[ZTask]) extends TaskRepo:
     sql"""SELECT public_id, papug_id, title, description, status, updated_at
          | FROM tasks
          | WHERE status = ${status.toString}""".stripMargin
-      .query[TaskInternal]
-      .map(TaskInternal.toTask)
+      .query[Task]
       .stream
       .transact(transactor)
       .toZStream()
       .orDie
 
-  private case class TaskInternal(
-    publicId: String,
-    papugId: String,
-    title: String,
-    description: Option[String],
-    status: String,
-    updatedAt: Timestamp
-  )
-  private object TaskInternal:
-    def fromTask(task: Task): TaskInternal =
-      TaskInternal(
-        publicId = TaskId.unwrap(task.publicId),
-        papugId = PapugId.unwrap(task.papugId),
-        title = task.title,
-        description = task.description,
-        status = task.status.toString,
-        updatedAt = Timestamp.from(task.updatedAt)
-      )
-    def toTask(task: TaskInternal): Task =
-      Task(
-        publicId = TaskId(task.publicId),
-        papugId = PapugId(task.papugId),
-        title = task.title,
-        description = task.description,
-        status = Task.Status.valueOf(task.status),
-        updatedAt = task.updatedAt.toInstant
-      )
+  private given Get[TaskId] = Get[String].map(TaskId(_))
+  private given Put[TaskId] = Put[String].contramap(TaskId.unwrap)
+
+  private given Get[PapugId] = Get[String].map(PapugId(_))
+  private given Put[PapugId] = Put[String].contramap(PapugId.unwrap)
+
+  private given Get[Task.Status] = Get[String].map(Task.Status.valueOf)
+  private given Put[Task.Status] = Put[String].contramap(_.toString)
+
+  private given Get[Instant] = Get[Timestamp].map(_.toInstant)
+  private given Put[Instant] = Put[Timestamp].contramap(Timestamp.from)
+
+end DoobieTaskRepo

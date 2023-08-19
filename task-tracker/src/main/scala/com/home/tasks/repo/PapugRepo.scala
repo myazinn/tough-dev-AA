@@ -1,7 +1,7 @@
 package com.home.tasks.repo
 
 import com.home.tasks.model.*
-import doobie.Transactor
+import doobie.*
 import doobie.implicits.*
 
 import zio.interop.catz.*
@@ -34,13 +34,12 @@ object DoobiePapugRepo:
 
 final case class DoobiePapugRepo(transactor: Transactor[ZTask]) extends PapugRepo:
   override def upsert(papug: Papug): UIO[Unit] =
-    val p = PapugInternal.fromPapug(papug)
     sql"""INSERT INTO papugs (id, email, roles)
-         | VALUES (${p.id}, ${p.email}, ${p.roles})
+         | VALUES (${papug.id}, ${papug.email}, ${papug.roles})
          | ON CONFLICT (id)
          |  DO UPDATE SET
-         |    email = ${p.email},
-         |    roles = ${p.roles}
+         |    email = ${papug.email},
+         |    roles = ${papug.roles}
          |""".stripMargin.update.run
       .transact(transactor)
       .unit
@@ -48,32 +47,26 @@ final case class DoobiePapugRepo(transactor: Transactor[ZTask]) extends PapugRep
 
   override def findByEmail(email: Email): UIO[Option[Papug]] =
     sql"SELECT id, email, roles FROM papugs WHERE email = ${Email.unwrap(email)}"
-      .query[PapugInternal]
-      .map(PapugInternal.toPapug)
+      .query[Papug]
       .option
       .transact(transactor)
       .orDie
 
   override def findAll: UStream[Papug] =
     sql"SELECT id, email, roles FROM papugs"
-      .query[PapugInternal]
-      .map(PapugInternal.toPapug)
+      .query[Papug]
       .stream
       .transact(transactor)
       .toZStream()
       .orDie
 
-  private case class PapugInternal(id: String, email: String, roles: String)
-  private object PapugInternal:
-    def toPapug(p: PapugInternal): Papug =
-      Papug(
-        id = PapugId(p.id),
-        email = Email(p.email),
-        roles = p.roles.split(",").filter(_.nonEmpty).map(Role(_)).toSet
-      )
-    def fromPapug(p: Papug): PapugInternal =
-      PapugInternal(
-        id = PapugId.unwrap(p.id),
-        email = Email.unwrap(p.email),
-        roles = p.roles.map(Role.unwrap).mkString(",")
-      )
+  private given Get[Email] = Get[String].map(Email(_))
+  private given Put[Email] = Put[String].contramap(Email.unwrap)
+
+  private given Get[PapugId] = Get[String].map(PapugId(_))
+  private given Put[PapugId] = Put[String].contramap(PapugId.unwrap)
+
+  private given Get[Set[Role]] = Get[String].map(_.split(",").filter(_.nonEmpty).map(Role(_)).toSet)
+  private given Put[Set[Role]] = Put[String].contramap(_.map(Role.unwrap).mkString(","))
+
+end DoobiePapugRepo
