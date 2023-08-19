@@ -1,21 +1,19 @@
-package com.home.keycloak.acl
+package com.home.keycloak.acl.repo
 
-import com.home.keycloak.acl.model.UserCUD
-import com.zaxxer.hikari.HikariConfig
+import com.home.keycloak.acl.model.User
 import doobie.Transactor
-import doobie.hikari.HikariTransactor
 import doobie.implicits.{ toConnectionIOOps, toSqlInterpolator }
 
 import zio.*
 import zio.interop.catz.*
 
 trait UserRepository:
-  def get(id: String): UIO[Option[UserCUD]]
-  def save(user: UserCUD): UIO[Unit]
+  def get(id: String): UIO[Option[User]]
+  def save(user: User): UIO[Unit]
 
 final case class DoobieUserRepository(transactor: Transactor[Task]) extends UserRepository:
 
-  def get(id: String): UIO[Option[UserCUD]] =
+  def get(id: String): UIO[Option[User]] =
     sql"""SELECT user_id, username, email, first_name, last_name, roles
          | FROM users
          | WHERE user_id = $id
@@ -26,7 +24,7 @@ final case class DoobieUserRepository(transactor: Transactor[Task]) extends User
       .transact(transactor)
       .orDie
 
-  def save(user: UserCUD): UIO[Unit] =
+  def save(user: User): UIO[Unit] =
     val u = UserCUDInternal.fromUser(user)
     sql"""INSERT INTO users (user_id, username, email, first_name, last_name, roles)
          | VALUES (${u.user_id}, ${u.username}, ${u.email}, ${u.first_name}, ${u.last_name}, ${u.roles})
@@ -52,7 +50,7 @@ final case class DoobieUserRepository(transactor: Transactor[Task]) extends User
   )
 
   private object UserCUDInternal:
-    def fromUser(user: UserCUD): UserCUDInternal =
+    def fromUser(user: User): UserCUDInternal =
       UserCUDInternal(
         user_id = user.userId,
         username = user.username,
@@ -61,8 +59,8 @@ final case class DoobieUserRepository(transactor: Transactor[Task]) extends User
         last_name = user.lastName,
         roles = user.roles.mkString(",")
       )
-    def toUser(user: UserCUDInternal): UserCUD =
-      UserCUD(
+    def toUser(user: UserCUDInternal): User =
+      User(
         userId = user.user_id,
         username = user.username,
         email = user.email,
@@ -72,18 +70,10 @@ final case class DoobieUserRepository(transactor: Transactor[Task]) extends User
       )
 
 object DoobieUserRepository:
-  val live: TaskLayer[UserRepository] =
-    ZLayer.fromZIO:
-      (for {
-        transactor <- {
-          val config = new HikariConfig()
-          config.setDriverClassName("org.postgresql.Driver")
-          config.setJdbcUrl("jdbc:postgresql://postgres:5432/auth")
-          config.setUsername("auth")
-          config.setPassword("auth")
-          config.setMaximumPoolSize(32)
-          HikariTransactor.fromHikariConfig[Task](config).toScopedZIO
-        }
+  val live: URLayer[Transactor[Task], DoobieUserRepository] =
+    ZLayer.scoped:
+      for {
+        transactor <- ZIO.service[Transactor[Task]]
         _ <-
           sql"""CREATE TABLE IF NOT EXISTS users (
                |  user_id TEXT PRIMARY KEY,
@@ -98,4 +88,4 @@ object DoobieUserRepository:
             .transact(transactor)
             .unit
             .orDie
-      } yield DoobieUserRepository(transactor)).provide(ZLayer.succeed(Scope.global))
+      } yield DoobieUserRepository(transactor)

@@ -3,7 +3,7 @@ package com.home.keycloak.acl.model
 import io.circe.syntax.*
 import io.circe.{ Encoder, Json }
 
-case class UserCUD(
+case class User(
   userId: String,
   username: String,
   email: String,
@@ -12,8 +12,8 @@ case class UserCUD(
   roles: Set[String]
 )
 
-object UserCUD:
-  given Encoder[UserCUD] =
+object User:
+  given Encoder[User] =
     Encoder.instance: user =>
       Json.obj(
         "user_id"    -> user.userId.asJson,

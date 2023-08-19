@@ -3,9 +3,9 @@ package com.home.keycloak.acl.model
 import io.circe.syntax.*
 import io.circe.{ Encoder, Json }
 
-case class UserRoleUpdatedEvent(userId: String, roles: Set[String])
-object UserRoleUpdatedEvent:
-  given Encoder[UserRoleUpdatedEvent] =
+case class UserRoleUpdated(userId: String, roles: Set[String])
+object UserRoleUpdated:
+  given Encoder[UserRoleUpdated] =
     Encoder.instance: event =>
       Json.obj(
         "user_id" -> event.userId.asJson,
