@@ -16,5 +16,5 @@ type Email = Email.Type
 
 object Role extends Newtype[String]:
   val ADMIN: Role   = Role("ADMIN")
-  val MANAGER: Role = Role("ADMIN")
+  val MANAGER: Role = Role("MANAGER")
 type Role = Role.Type
