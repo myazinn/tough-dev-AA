@@ -79,6 +79,7 @@ services:
       - "5432:5432"
     networks:
       - aa_app_network
+    command: postgres -c 'max_connections=512'
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
