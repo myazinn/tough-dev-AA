@@ -13,7 +13,7 @@ CREATE USER tasktracker WITH ENCRYPTED PASSWORD 'tasktracker';
 GRANT ALL PRIVILEGES ON DATABASE tasktracker TO tasktracker;
 ALTER DATABASE tasktracker OWNER TO tasktracker;
 
-CREATE DATABASE accouting;
-CREATE USER accouting WITH ENCRYPTED PASSWORD 'accouting';
-GRANT ALL PRIVILEGES ON DATABASE accouting TO accouting;
-ALTER DATABASE accouting OWNER TO accouting;
+CREATE DATABASE accounting;
+CREATE USER accounting WITH ENCRYPTED PASSWORD 'accounting';
+GRANT ALL PRIVILEGES ON DATABASE accounting TO accounting;
+ALTER DATABASE accounting OWNER TO accounting;
