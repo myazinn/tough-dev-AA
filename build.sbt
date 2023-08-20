@@ -19,6 +19,7 @@ lazy val root =
 lazy val `task-tracker` =
   (project in file("task-tracker"))
     .enablePlugins(ScalafixPlugin, JavaAppPackaging, DockerPlugin)
+    .dependsOn(`schema-registry`)
     .settings(
       name := "task-tracker",
       libraryDependencies ++= zioDeps ++ kafkaDeps ++ zioHTTPDeps ++ circeDeps ++ logDeps ++ newtypeDeps ++ postgresDeps,

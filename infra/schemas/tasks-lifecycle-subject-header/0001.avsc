@@ -1,0 +1,6 @@
+{
+  "type" : "enum",
+  "name" : "Subject",
+  "namespace" : "com.home.tasks.model",
+  "symbols" : [ "Created", "Reassigned", "Completed" ]
+}

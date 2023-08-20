@@ -1,0 +1,18 @@
+{
+  "type" : "record",
+  "name" : "TaskReassigned",
+  "namespace" : "com.home.tasks.model",
+  "fields" : [ {
+    "name" : "public_id",
+    "type" : "string"
+  }, {
+    "name" : "worker_id",
+    "type" : "string"
+  }, {
+    "name" : "updated_at",
+    "type" : {
+      "type" : "long",
+      "logicalType" : "timestamp-millis"
+    }
+  } ]
+}
