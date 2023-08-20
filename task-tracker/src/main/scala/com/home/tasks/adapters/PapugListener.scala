@@ -1,5 +1,6 @@
 package com.home.tasks.adapters
 
+import com.home.tasks.adapters.KafkaPapugListener.Config
 import com.home.tasks.model.*
 import com.home.tasks.service.PapugService
 import io.circe.*
@@ -12,18 +13,23 @@ trait PapugListener:
   def listenUpdates: UIO[Unit]
 
 object KafkaPapugListener:
-  val live: URLayer[ConsumerSettings & PapugService, KafkaPapugListener] =
+  case class Config(usersStreamingTopic: String)
+
+  val live: URLayer[ConsumerSettings & PapugService & Config, KafkaPapugListener] =
     ZLayer.scoped:
       for
         consumerSettings <- ZIO.service[ConsumerSettings]
         consumer         <- Consumer.make(consumerSettings).orDie
         papugService     <- ZIO.service[PapugService]
-      yield KafkaPapugListener(consumer, papugService)
+        config           <- ZIO.service[Config]
+      yield KafkaPapugListener(consumer, papugService, config)
 
-final case class KafkaPapugListener(consumer: Consumer, papugService: PapugService) extends PapugListener:
+final case class KafkaPapugListener(consumer: Consumer, papugService: PapugService, config: Config)
+    extends PapugListener:
+
   override def listenUpdates: UIO[Unit] =
     consumer
-      .plainStream(Subscription.topics(usersStreamingTopic), Serde.byteArray, Serde.string)
+      .plainStream(Subscription.topics(config.usersStreamingTopic), Serde.byteArray, Serde.string)
       .runForeach: record =>
         val process =
           parser.parse(record.value).flatMap(_.as[Papug]) match
@@ -33,8 +39,8 @@ final case class KafkaPapugListener(consumer: Consumer, papugService: PapugServi
               papugService.upsert(papug)
         process *> record.offset.commit
       .orDie
+  end listenUpdates
 
-  private val usersStreamingTopic = "users-streaming"
   private given Decoder[Papug] =
     Decoder.instance { hc =>
       for
@@ -46,3 +52,5 @@ final case class KafkaPapugListener(consumer: Consumer, papugService: PapugServi
   private given Decoder[PapugId] = Decoder.decodeString.map(PapugId(_))
   private given Decoder[Email]   = Decoder.decodeString.map(Email(_))
   private given Decoder[Role]    = Decoder.decodeString.map(Role(_))
+
+end KafkaPapugListener

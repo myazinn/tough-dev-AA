@@ -15,6 +15,8 @@ object TaskTrackerApp extends ZIOAppDefault:
 
   private val brokers = List("redpanda:9092")
 
+  private val usersStreamingTopic = "users-streaming"
+
   override def run: ZIO[Scope, Any, Any] =
     val consumeMessages = ZIO.serviceWithZIO[PapugListener](_.listenUpdates)
 
@@ -45,6 +47,7 @@ object TaskTrackerApp extends ZIOAppDefault:
       PapugServiceLive.live,
       KafkaTaskPublisher.live,
       Server.defaultWithPort(8000),
+      ZLayer.succeed(KafkaPapugListener.Config(usersStreamingTopic)),
       DoobieTaskRepo.live,
       DoobiePapugRepo.live,
       transactor,
