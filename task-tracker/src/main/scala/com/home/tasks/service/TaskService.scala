@@ -45,7 +45,11 @@ final case class TaskServiceLive(taskRepo: TaskRepo, papugService: PapugService,
         status = Task.Status.InProgress,
         updatedAt = now
       )
-      _ <- upsert(Chunk.single(task))
+
+      update     = TaskUpdate.Update.Created(task.workerId, task.authorId, task.title, task.description)
+      taskUpdate = TaskUpdate(task.publicId, update, task.updatedAt)
+      _ <- taskRepo.upsert(Chunk.single(task))
+      _ <- taskPublisher.publish(Chunk.single(taskUpdate))
     yield CreateTaskResponse(task.publicId, task.workerId)
 
   override def reassignTasks: ZIO[RequestContext, Error.Unauthorized, Unit] =
@@ -65,7 +69,13 @@ final case class TaskServiceLive(taskRepo: TaskRepo, papugService: PapugService,
           task.copy(workerId = papugs(index).id, updatedAt = now)
         }
       }
-      _ <- upsert(reassigned)
+
+      taskUpdates = reassigned.map { task =>
+        val update = TaskUpdate.Update.Reassigned(task.workerId)
+        TaskUpdate(task.publicId, update, task.updatedAt)
+      }
+      _ <- taskRepo.upsert(reassigned)
+      _ <- taskPublisher.publish(taskUpdates)
     yield ()
 
   override def completeTask(id: TaskId): ZIO[RequestContext, Error, Unit] =
@@ -82,7 +92,12 @@ final case class TaskServiceLive(taskRepo: TaskRepo, papugService: PapugService,
       }
 
       _ <- ZIO.logInfo(s"Completing task: $id")
-      _ <- upsert(Chunk.single(task.copy(status = Task.Status.Done)))
+
+      completed  = task.copy(status = Task.Status.Done)
+      update     = TaskUpdate.Update.Completed
+      taskUpdate = TaskUpdate(completed.publicId, update, completed.updatedAt)
+      _ <- taskRepo.upsert(Chunk.single(completed))
+      _ <- taskPublisher.publish(Chunk.single(taskUpdate))
     yield ()
 
   override def getTasks: ZIO[RequestContext, TaskService.Error.NotFound, Chunk[Task]] =
@@ -101,8 +116,5 @@ final case class TaskServiceLive(taskRepo: TaskRepo, papugService: PapugService,
 
   private def papugByEmail(email: Email): IO[Error.NotFound, Papug] =
     papugService.findByEmail(email).someOrFail(Error.NotFound(s"Papug $email not found"): Error.NotFound)
-
-  private def upsert(tasks: Chunk[Task]): UIO[Unit] =
-    taskRepo.upsert(tasks) *> taskPublisher.publish(tasks)
 
 end TaskServiceLive
