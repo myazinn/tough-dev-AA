@@ -1,8 +1,5 @@
 package com.home.tasks.model
 
-import com.home.tasks
-import com.home.tasks.model
-
 import zio.prelude.Newtype
 
 object PapugId extends Newtype[String]
