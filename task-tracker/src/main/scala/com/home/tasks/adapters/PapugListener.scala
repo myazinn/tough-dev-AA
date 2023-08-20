@@ -30,7 +30,7 @@ final case class KafkaPapugListener(consumer: Consumer, papugService: PapugServi
             case Left(error) =>
               ZIO.logError(s"Failed to parse papug: $error")
             case Right(papug) =>
-              papugService.upsert(papug) *> ZIO.logInfo(s"Upserted papug: $papug")
+              papugService.upsert(papug)
         process *> record.offset.commit
       .orDie
 
