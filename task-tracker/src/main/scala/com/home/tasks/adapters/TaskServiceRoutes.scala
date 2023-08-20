@@ -72,8 +72,9 @@ final case class TaskServiceRoutesLive(taskService: TaskService) extends TaskSer
 
   private def errorToResponse(error: TaskService.Error) =
     error match
-      case nf: TaskService.Error.NotFound     => jsonResponse(nf, Status.NotFound)
-      case ua: TaskService.Error.Unauthorized => jsonResponse(ua, Status.Forbidden)
+      case err: TaskService.Error.BadRequest   => jsonResponse(err, Status.BadRequest)
+      case err: TaskService.Error.NotFound     => jsonResponse(err, Status.NotFound)
+      case err: TaskService.Error.Unauthorized => jsonResponse(err, Status.Forbidden)
 
   private def jsonResponse[Entity: Encoder](entity: Entity, status: Status = Status.Ok): Response =
     Response.json(entity.asJson.noSpaces).copy(status = status)

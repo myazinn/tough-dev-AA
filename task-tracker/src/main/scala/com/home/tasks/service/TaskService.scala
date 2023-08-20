@@ -16,6 +16,7 @@ trait TaskService:
 
 object TaskService:
   enum Error:
+    case BadRequest(message: String)
     case Unauthorized(message: String)
     case NotFound(message: String)
 
@@ -75,6 +76,9 @@ final case class TaskServiceLive(taskRepo: TaskRepo, papugService: PapugService,
       papug <- papugByEmail(context.papug)
       _ <- ZIO.unless(task.workerId == papug.id) {
         ZIO.fail(Error.Unauthorized(s"User ${context.papug} is not authorized to complete task $id"))
+      }
+      _ <- ZIO.when(task.status == Task.Status.Done) {
+        ZIO.fail(Error.BadRequest(s"The task $id is already completed"))
       }
 
       _ <- ZIO.logInfo(s"Completing task: $id")
