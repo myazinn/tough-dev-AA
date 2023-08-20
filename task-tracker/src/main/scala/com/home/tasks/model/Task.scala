@@ -4,7 +4,8 @@ import java.time.Instant
 
 case class Task(
   publicId: TaskId,
-  papugId: PapugId,
+  workerId: PapugId,
+  authorId: PapugId,
   title: String,
   description: Option[String],
   status: Task.Status,
@@ -17,4 +18,4 @@ object Task:
 
 case class CreateTaskRequest(title: String, description: Option[String])
 
-case class CreateTaskResponse(id: TaskId, papug: Email)
+case class CreateTaskResponse(id: TaskId, workerId: PapugId)

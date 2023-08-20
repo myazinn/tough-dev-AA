@@ -30,7 +30,8 @@ object DoobieTaskRepo:
           sql"""CREATE TABLE IF NOT EXISTS tasks (
                |  id          SERIAL PRIMARY KEY,
                |  public_id   TEXT NOT NULL,
-               |  papug_id    TEXT NOT NULL,
+               |  worker_id    TEXT NOT NULL,
+               |  author_id    TEXT NOT NULL,
                |  title       TEXT NOT NULL,
                |  description TEXT,
                |  status      TEXT NOT NULL,
@@ -46,11 +47,12 @@ object DoobieTaskRepo:
 final case class DoobieTaskRepo(transactor: Transactor[ZTask]) extends TaskRepo:
   override def upsert(tasks: Chunk[Task]): UIO[Unit] =
     val sql =
-      """INSERT INTO tasks (public_id, papug_id, title, description, status, updated_at)
-        | VALUES (?, ?, ?, ?, ?, ?)
+      """INSERT INTO tasks (public_id, worker_id, author_id, title, description, status, updated_at)
+        | VALUES (?, ?, ?, ?, ?, ?, ?)
         | ON CONFLICT (public_id)
         |  DO UPDATE SET
-        |    papug_id = EXCLUDED.papug_id,
+        |    worker_id = EXCLUDED.worker_id,
+        |    author_id = EXCLUDED.author_id,
         |    title = EXCLUDED.title,
         |    description = EXCLUDED.description,
         |    status = EXCLUDED.status,
@@ -61,18 +63,18 @@ final case class DoobieTaskRepo(transactor: Transactor[ZTask]) extends TaskRepo:
   end upsert
 
   override def findById(id: TaskId): UIO[Option[Task]] =
-    sql"""SELECT public_id, papug_id, title, description, status, updated_at
+    sql"""SELECT public_id, worker_id, author_id, title, description, status, updated_at
          | FROM tasks
-         | WHERE public_id = ${TaskId.unwrap(id)}""".stripMargin
+         | WHERE public_id = $id""".stripMargin
       .query[Task]
       .option
       .transact(transactor)
       .orDie
 
   override def findAllForPapug(papug: PapugId): UStream[Task] =
-    sql"""SELECT public_id, papug_id, title, description, status, updated_at
+    sql"""SELECT public_id, worker_id, author_id, title, description, status, updated_at
          | FROM tasks
-         | WHERE papug_id = ${PapugId.unwrap(papug)}""".stripMargin
+         | WHERE worker_id = $papug OR author_id = $papug""".stripMargin
       .query[Task]
       .stream
       .transact(transactor)
@@ -80,9 +82,9 @@ final case class DoobieTaskRepo(transactor: Transactor[ZTask]) extends TaskRepo:
       .orDie
 
   override def findAllWithStatus(status: Status): UStream[Task] =
-    sql"""SELECT public_id, papug_id, title, description, status, updated_at
+    sql"""SELECT public_id, worker_id, author_id, title, description, status, updated_at
          | FROM tasks
-         | WHERE status = ${status.toString}""".stripMargin
+         | WHERE status = $status""".stripMargin
       .query[Task]
       .stream
       .transact(transactor)

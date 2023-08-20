@@ -30,18 +30,22 @@ final case class TaskServiceLive(taskRepo: TaskRepo, papugService: PapugService,
       _       <- ZIO.logInfo(s"Creating task: $request")
       context <- ZIO.service[RequestContext]
       now     <- Clock.instant
-      papug   <- papugByEmail(context.papug)
+      author  <- papugByEmail(context.papug)
+      workers <- findAllWorkers
+      worker  <- Random.nextIntBounded(workers.size).map(workers(_))
+
       publicId = TaskId(UUID.randomUUID().toString)
       task = Task(
         publicId = publicId,
-        papugId = papug.id,
+        workerId = worker.id,
+        authorId = author.id,
         title = request.title,
         description = request.description,
         status = Task.Status.InProgress,
         updatedAt = now
       )
       _ <- upsert(Chunk.single(task))
-    yield CreateTaskResponse(task.publicId, context.papug)
+    yield CreateTaskResponse(task.publicId, task.workerId)
 
   override def reassignTasks: ZIO[RequestContext, Error.Unauthorized, Unit] =
     for
@@ -57,7 +61,7 @@ final case class TaskServiceLive(taskRepo: TaskRepo, papugService: PapugService,
 
       reassigned <- ZIO.foreachPar(tasks) { task =>
         Random.nextIntBounded(papugs.size).map { index =>
-          task.copy(papugId = papugs(index).id, updatedAt = now)
+          task.copy(workerId = papugs(index).id, updatedAt = now)
         }
       }
       _ <- upsert(reassigned)
@@ -69,7 +73,7 @@ final case class TaskServiceLive(taskRepo: TaskRepo, papugService: PapugService,
 
       task  <- taskRepo.findById(id).someOrFail(Error.NotFound(s"Task $id not found"))
       papug <- papugByEmail(context.papug)
-      _ <- ZIO.unless(task.papugId == papug.id) {
+      _ <- ZIO.unless(task.workerId == papug.id) {
         ZIO.fail(Error.Unauthorized(s"User ${context.papug} is not authorized to complete task $id"))
       }
 
@@ -84,6 +88,9 @@ final case class TaskServiceLive(taskRepo: TaskRepo, papugService: PapugService,
       _       <- ZIO.logInfo(s"Getting tasks for papug: $papug")
       tasks   <- taskRepo.findAllForPapug(papug.id).runCollect
     yield tasks
+
+  private def findAllWorkers =
+    papugService.findAll.filterNot(papug => isImportantPapug(papug.roles)).runCollect
 
   private def isImportantPapug(roles: Set[Role]): Boolean =
     roles.contains(Role.ADMIN) || roles.contains(Role.MANAGER)
