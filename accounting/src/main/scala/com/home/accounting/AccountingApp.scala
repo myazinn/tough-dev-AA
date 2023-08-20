@@ -50,34 +50,40 @@ object AccountingApp extends ZIOAppDefault:
         HikariTransactor.fromHikariConfig[Task](config).toScopedZIO
       }
 
-    app.provide(
-      AccountingRoutesLive.live,
-      KafkaPapugListener.live,
-      KafkaTaskListener.live,
-      PapugServiceLive.live,
-      TaskServiceLive.live,
-      RedpandaAvroSchemaRegistry.live,
-      AccountingServiceLive.live,
-      DoobiePapugRepo.live,
-      DoobieTaskRepo.live,
-      Server.defaultWithPort(8001),
-      Client.default,
-      transactor,
-      consumerSettings,
-      ZLayer.succeed(
-        KafkaPapugListener.Config(
-          papugsStreamingTopic = usersStreamingTopic,
-          papugsStreamingSubject = usersStreamingSubject
-        )
-      ),
-      ZLayer.succeed(
-        KafkaTaskListener.Config(
-          taskLifecycleTopic = tasksLifecycleTopic,
-          taskLifecycleSubjectHeader = tasksLifecycleSubjectHeader,
-          taskCreatedSubject = tasksCreatedSubject,
-          taskReassignedSubject = tasksReassignedSubject,
-          taskCompletedSubject = tasksCompletedSubject
-        )
-      ),
-      ZLayer.succeed(RedpandaAvroSchemaRegistry.Config(schemaRegistry))
-    )
+    app
+      .provide(
+        AccountingRoutesLive.live,
+        KafkaPapugListener.live,
+        KafkaTaskListener.live,
+        PapugServiceLive.live,
+        TaskServiceLive.live,
+        RedpandaAvroSchemaRegistry.live,
+        AccountingServiceLive.live,
+        DoobiePapugRepo.live,
+        DoobieTaskRepo.live,
+        DoobieAccountInfoRepo.live,
+        DoobieInvoiceRepo.live,
+        KafkaInvoicePublisher.live,
+        KafkaAccountInfoPublisher.live,
+        Server.defaultWithPort(8001),
+        Client.default,
+        transactor,
+        consumerSettings,
+        ZLayer.succeed(
+          KafkaPapugListener.Config(
+            papugsStreamingTopic = usersStreamingTopic,
+            papugsStreamingSubject = usersStreamingSubject
+          )
+        ),
+        ZLayer.succeed(
+          KafkaTaskListener.Config(
+            taskLifecycleTopic = tasksLifecycleTopic,
+            taskLifecycleSubjectHeader = tasksLifecycleSubjectHeader,
+            taskCreatedSubject = tasksCreatedSubject,
+            taskReassignedSubject = tasksReassignedSubject,
+            taskCompletedSubject = tasksCompletedSubject
+          )
+        ),
+        ZLayer.succeed(RedpandaAvroSchemaRegistry.Config(schemaRegistry))
+      )
+      .tapErrorCause(ec => ZIO.logErrorCause("Error in AccountingApp", ec))

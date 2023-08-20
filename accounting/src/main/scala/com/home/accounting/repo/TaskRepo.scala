@@ -33,7 +33,7 @@ object DoobieTaskRepo:
                |  title                TEXT NOT NULL,
                |  description          TEXT,
                |  updated_at           TIMESTAMP WITH TIME ZONE NOT NULL,
-               |  CONSTRAINT public_id_unique UNIQUE (public_id)
+               |  CONSTRAINT tasks_public_id_unique UNIQUE (public_id)
                |)
                |""".stripMargin.update.run
             .transact(transactor)

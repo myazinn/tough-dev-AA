@@ -1,0 +1,26 @@
+{
+  "type" : "record",
+  "name" : "Invoice",
+  "namespace" : "com.home.accounting.model",
+  "fields" : [ {
+    "name" : "public_id",
+    "type" : "string"
+  }, {
+    "name" : "papug_id",
+    "type" : "string"
+  }, {
+    "name" : "task_id",
+    "type" : "string"
+  }, {
+    "name" : "amount",
+    "type" : "long"
+  }, {
+    "name" : "operation",
+    "type" : {
+      "type" : "enum",
+      "name" : "Operation",
+      "namespace" : "com.home.accounting.model.Invoice",
+      "symbols" : [ "Expense", "Income" ]
+    }
+  } ]
+}
