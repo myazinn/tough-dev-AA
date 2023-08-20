@@ -22,6 +22,7 @@ object TaskTrackerApp extends ZIOAppDefault:
   private val tasksCreatedSubject    = "tasks-lifecycle-created-value"
   private val tasksReassignedSubject = "tasks-lifecycle-reassigned-value"
   private val tasksCompletedSubject  = "tasks-lifecycle-completed-value"
+  private val usersStreamingSubject  = "users-streaming-value"
 
   override def run: ZIO[Scope, Any, Any] =
     val consumeMessages = ZIO.serviceWithZIO[PapugListener](_.listenUpdates)
@@ -57,7 +58,7 @@ object TaskTrackerApp extends ZIOAppDefault:
       RedpandaAvroSchemaRegistry.live,
       ZLayer.succeed(RedpandaAvroSchemaRegistry.Config(schemaRegistry)),
       ZLayer.succeed(KafkaTaskPublisher.Config(tasksCreatedSubject, tasksReassignedSubject, tasksCompletedSubject)),
-      ZLayer.succeed(KafkaPapugListener.Config(usersStreamingTopic)),
+      ZLayer.succeed(KafkaPapugListener.Config(usersStreamingTopic, usersStreamingSubject)),
       DoobieTaskRepo.live,
       DoobiePapugRepo.live,
       transactor,

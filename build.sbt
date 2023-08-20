@@ -42,6 +42,7 @@ lazy val accounting =
 lazy val auth =
   (project in file("auth"))
     .enablePlugins(ScalafixPlugin, JavaAppPackaging)
+    .dependsOn(`schema-registry`)
     .settings(
       name := "auth",
       libraryDependencies ++= zioDeps ++ kafkaDeps ++ circeDeps ++ logDeps ++ postgresDeps,
