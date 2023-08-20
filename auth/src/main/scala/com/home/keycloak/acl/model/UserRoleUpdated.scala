@@ -1,13 +1,5 @@
 package com.home.keycloak.acl.model
 
-import io.circe.syntax.*
-import io.circe.{ Encoder, Json }
+import com.sksamuel.avro4s.AvroName
 
-case class UserRoleUpdated(userId: String, roles: Set[String])
-object UserRoleUpdated:
-  given Encoder[UserRoleUpdated] =
-    Encoder.instance: event =>
-      Json.obj(
-        "user_id" -> event.userId.asJson,
-        "roles"   -> event.roles.asJson
-      )
+case class UserRoleUpdated(@AvroName("user_id") userId: String, @AvroName("roles") roles: Set[String])

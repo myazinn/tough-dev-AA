@@ -30,8 +30,8 @@ object DoobieTaskRepo:
           sql"""CREATE TABLE IF NOT EXISTS tasks (
                |  id          SERIAL PRIMARY KEY,
                |  public_id   TEXT NOT NULL,
-               |  worker_id    TEXT NOT NULL,
-               |  author_id    TEXT NOT NULL,
+               |  worker_id   TEXT NOT NULL REFERENCES papugs(id) ON DELETE CASCADE,
+               |  author_id   TEXT NOT NULL REFERENCES papugs(id) ON DELETE CASCADE,
                |  title       TEXT NOT NULL,
                |  description TEXT,
                |  status      TEXT NOT NULL,

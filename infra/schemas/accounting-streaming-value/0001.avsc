@@ -1,0 +1,12 @@
+{
+  "type" : "record",
+  "name" : "AccountInfo",
+  "namespace" : "com.home.accounting.model",
+  "fields" : [ {
+    "name" : "papug_id",
+    "type" : "string"
+  }, {
+    "name" : "balance",
+    "type" : "long"
+  } ]
+}

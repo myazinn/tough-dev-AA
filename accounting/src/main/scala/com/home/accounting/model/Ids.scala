@@ -13,6 +13,12 @@ type Email = Email.Type
 
 object Money extends Newtype[Long]
 type Money = Money.Type
+extension (money: Money)
+  def +(other: Money): Money = Money(Money.unwrap(money) + Money.unwrap(other))
+  def -(other: Money): Money = Money(Money.unwrap(money) - Money.unwrap(other))
+
+object InvoiceId extends Newtype[String]
+type InvoiceId = InvoiceId.Type
 
 object Role extends Newtype[String]:
   val ADMIN: Role   = Role("ADMIN")

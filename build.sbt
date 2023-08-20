@@ -11,7 +11,7 @@ inThisBuild(
 
 lazy val root =
   (project in file("."))
-    .aggregate(`task-tracker`, auth, `keycloak-to-kafka`, accounting)
+    .aggregate(`task-tracker`, auth, `keycloak-to-kafka`, accounting, `schema-registry`)
     .settings(
       name := "tough-dev-AA"
     )
@@ -19,6 +19,7 @@ lazy val root =
 lazy val `task-tracker` =
   (project in file("task-tracker"))
     .enablePlugins(ScalafixPlugin, JavaAppPackaging, DockerPlugin)
+    .dependsOn(`schema-registry`)
     .settings(
       name := "task-tracker",
       libraryDependencies ++= zioDeps ++ kafkaDeps ++ zioHTTPDeps ++ circeDeps ++ logDeps ++ newtypeDeps ++ postgresDeps,
@@ -30,6 +31,7 @@ lazy val `task-tracker` =
 lazy val accounting =
   (project in file("accounting"))
     .enablePlugins(ScalafixPlugin, JavaAppPackaging, DockerPlugin)
+    .dependsOn(`schema-registry`)
     .settings(
       name := "accounting",
       libraryDependencies ++= zioDeps ++ kafkaDeps ++ zioHTTPDeps ++ circeDeps ++ logDeps ++ newtypeDeps ++ postgresDeps,
@@ -41,6 +43,7 @@ lazy val accounting =
 lazy val auth =
   (project in file("auth"))
     .enablePlugins(ScalafixPlugin, JavaAppPackaging)
+    .dependsOn(`schema-registry`)
     .settings(
       name := "auth",
       libraryDependencies ++= zioDeps ++ kafkaDeps ++ circeDeps ++ logDeps ++ postgresDeps,
@@ -63,6 +66,14 @@ lazy val `keycloak-to-kafka` =
           val oldStrategy = (ThisBuild / assemblyMergeStrategy).value
           oldStrategy(x)
       }
+    )
+
+lazy val `schema-registry` =
+  (project in file("schema-registry"))
+    .enablePlugins(ScalafixPlugin)
+    .settings(
+      name := "schema-registry",
+      libraryDependencies ++= zioDeps ++ zioHTTPDeps ++ avroDeps ++ circeDeps
     )
 
 ThisBuild / scalacOptions ++= Seq(
@@ -131,4 +142,8 @@ lazy val postgresDeps = {
 
 lazy val newtypeDeps = Seq(
   "dev.zio" %% "zio-prelude" % "1.0.0-RC20"
+)
+
+lazy val avroDeps = Seq(
+  "com.sksamuel.avro4s" %% "avro4s-core" % "5.0.4"
 )

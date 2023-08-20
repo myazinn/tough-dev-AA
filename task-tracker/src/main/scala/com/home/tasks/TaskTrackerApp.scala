@@ -1,5 +1,6 @@
 package com.home.tasks
 
+import com.home.avro.schema.RedpandaAvroSchemaRegistry
 import com.home.tasks.adapters.*
 import com.home.tasks.repo.*
 import com.home.tasks.service.*
@@ -7,15 +8,24 @@ import com.zaxxer.hikari.HikariConfig
 import doobie.hikari.HikariTransactor
 
 import zio.*
-import zio.http.Server
+import zio.http.{ Client, Server }
 import zio.interop.catz.*
 import zio.kafka.consumer.*
+import zio.kafka.producer.ProducerSettings
 
 object TaskTrackerApp extends ZIOAppDefault:
 
-  private val brokers = List("redpanda:9092")
+  private val brokers        = List("redpanda:9092")
+  private val schemaRegistry = "http://redpanda:18081"
 
+  private val tasksLifecycleTopic = "tasks-lifecycle"
   private val usersStreamingTopic = "users-streaming"
+
+  private val tasksCreatedSubject         = "tasks-lifecycle-created-value"
+  private val tasksReassignedSubject      = "tasks-lifecycle-reassigned-value"
+  private val tasksCompletedSubject       = "tasks-lifecycle-completed-value"
+  private val tasksLifecycleSubjectHeader = "tasks-lifecycle-subject-header"
+  private val usersStreamingSubject       = "users-streaming-value"
 
   override def run: ZIO[Scope, Any, Any] =
     val consumeMessages = ZIO.serviceWithZIO[PapugListener](_.listenUpdates)
@@ -29,6 +39,7 @@ object TaskTrackerApp extends ZIOAppDefault:
     val app = runHTTPServer.race(consumeMessages)
 
     val consumerSettings = ZLayer.succeed(ConsumerSettings(brokers).withGroupId("task-tracker"))
+    val producerSettings = ZLayer.succeed(ProducerSettings(brokers))
     val transactor =
       ZLayer.scoped {
         val config = new HikariConfig()
@@ -47,9 +58,22 @@ object TaskTrackerApp extends ZIOAppDefault:
       PapugServiceLive.live,
       KafkaTaskPublisher.live,
       Server.defaultWithPort(8000),
-      ZLayer.succeed(KafkaPapugListener.Config(usersStreamingTopic)),
+      Client.default,
+      RedpandaAvroSchemaRegistry.live,
+      ZLayer.succeed(RedpandaAvroSchemaRegistry.Config(schemaRegistry)),
+      ZLayer.succeed(
+        KafkaTaskPublisher.Config(
+          taskLifecycleTopic = tasksLifecycleTopic,
+          taskLifecycleSubjectHeader = tasksLifecycleSubjectHeader,
+          taskCreatedSubject = tasksCreatedSubject,
+          taskReassignedSubject = tasksReassignedSubject,
+          taskCompletedSubject = tasksCompletedSubject
+        )
+      ),
+      ZLayer.succeed(KafkaPapugListener.Config(usersStreamingTopic, usersStreamingSubject)),
       DoobieTaskRepo.live,
       DoobiePapugRepo.live,
       transactor,
-      consumerSettings
+      consumerSettings,
+      producerSettings
     )

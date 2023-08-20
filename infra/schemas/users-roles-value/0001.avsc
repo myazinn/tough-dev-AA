@@ -1,0 +1,15 @@
+{
+  "type" : "record",
+  "name" : "UserRoleUpdated",
+  "namespace" : "com.home.keycloak.acl.model",
+  "fields" : [ {
+    "name" : "user_id",
+    "type" : "string"
+  }, {
+    "name" : "roles",
+    "type" : {
+      "type" : "array",
+      "items" : "string"
+    }
+  } ]
+}
