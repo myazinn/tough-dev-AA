@@ -25,8 +25,8 @@ object DoobieTaskRepo:
           sql"""CREATE TABLE IF NOT EXISTS tasks (
                |  id                   SERIAL PRIMARY KEY,
                |  public_id            TEXT NOT NULL,
-               |  worker_id            TEXT NOT NULL,
-               |  author_id            TEXT NOT NULL,
+               |  worker_id            TEXT NOT NULL REFERENCES papugs(id) ON DELETE CASCADE,
+               |  author_id            TEXT NOT NULL REFERENCES papugs(id) ON DELETE CASCADE,
                |  pay_to_worker        BIGINT NOT NULL,
                |  withdraw_from_author BIGINT NOT NULL,
                |  status               TEXT NOT NULL,
